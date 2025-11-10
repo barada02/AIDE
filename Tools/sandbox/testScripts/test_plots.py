@@ -103,6 +103,18 @@ print("Created 2 separate plots")
     
     if data.get('plots'):
         print(f"\n🎨 Found {len(data['plots'])} plot(s)!")
+        for i, plot_data in enumerate(data['plots']):
+            print(f"Plot {i+1} - Base64 length: {len(plot_data)} characters")
+            
+            # Try to decode and save the plot
+            try:
+                image_data = base64.b64decode(plot_data)
+                image = Image.open(io.BytesIO(image_data))
+                filename = f"multiple_plot_{i+1}.png"
+                image.save(filename)
+                print(f"✅ Saved plot as {filename}")
+            except Exception as e:
+                print(f"❌ Error saving plot: {e}")
         return len(data['plots']) == 2
     else:
         print("❌ No plots returned")
