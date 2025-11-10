@@ -7,7 +7,7 @@ import json
 import time
 
 # API base URL (change this to your deployed service URL)
-BASE_URL = "http://localhost:8080"
+BASE_URL = "https://sandbox-797563351214.europe-west1.run.app/"
 
 def test_health_check():
     """Test the health check endpoint"""

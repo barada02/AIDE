@@ -111,8 +111,10 @@ async def execute_code_safely(code: str, timeout: int = 30, memory_limit_mb: int
     # Create temporary file for code execution
     with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as temp_file:
         # Add memory monitoring and safe imports
-        safe_code = f'''
-import sys
+        # Properly indent user code
+        indented_code = '\n'.join('    ' + line for line in code.split('\n'))
+        
+        safe_code = f'''import sys
 import traceback
 import psutil
 import os
@@ -125,7 +127,7 @@ initial_memory = process.memory_info().rss / 1024 / 1024
 
 try:
     # User code starts here
-{code}
+{indented_code}
     
     # Memory usage after execution
     final_memory = process.memory_info().rss / 1024 / 1024
