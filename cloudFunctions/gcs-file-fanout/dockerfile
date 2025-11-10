@@ -1,0 +1,22 @@
+# 1. Use an official, lightweight Python 3.12 image
+FROM python:3.12-slim
+
+# 2. Set environment variables
+ENV PYTHONUNBUFFERED True  # Ensures logs are sent straight to Cloud Run
+ENV PORT 8080              # The port Cloud Run expects your app to listen on
+
+# 3. Set a working directory in the container
+WORKDIR /app
+
+# 4. Copy and install dependencies
+# This is done in two steps to cache the installed packages
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# 5. Copy your application code into the container
+COPY . .
+
+# 6. Define the command to run your function
+# This uses the functions-framework (from requirements.txt) to start a server
+# and points it to your function "fan_out_to_services".
+CMD ["functions-framework", "--target=fan_out_to_services", "--port=8080"]
