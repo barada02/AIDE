@@ -17,3 +17,18 @@ gcloud storage buckets create gs://$BUCKET_NAME `
 ### step 2: cloud task queue setup
 
 ```powershell
+gcloud tasks queues create aide-job-queue `
+  --location=us-central1 `
+  --max-dispatches-per-second=10 `
+  --max-concurrent-dispatches=20
+```
+### Step 3: Create the Pub/Sub Topic
+
+```powershell
+$TOPIC_NAME="aidelab.new_upload"
+gcloud pubsub topics create ${TOPIC_NAME}
+```
+### Step 4: Deploy the Cloud Function
+
+did with console github dockerfile.
+
