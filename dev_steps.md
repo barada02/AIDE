@@ -25,10 +25,9 @@ gcloud tasks queues create aide-job-queue `
 ### Step 3: Create the Pub/Sub Topic
 
 ```powershell
-$TOPIC_NAME="aidelab.new_upload"
+$TOPIC_NAME="aide-file-fanout-topic"
 gcloud pubsub topics create ${TOPIC_NAME}
 ```
 ### Step 4: Deploy the Cloud Function
 
-did with console github dockerfile.
 
