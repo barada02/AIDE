@@ -47,6 +47,7 @@ class CodeExecutionResponse(BaseModel):
     execution_time: float
     memory_used_mb: Optional[float] = None
     timestamp: str
+    plots: Optional[List[str]] = Field(default=None, description="Base64 encoded plot images")
 
 class LibraryInfo(BaseModel):
     name: str
@@ -105,7 +106,8 @@ async def execute_code_safely(code: str, timeout: int = 30, memory_limit_mb: int
             "output": "",
             "error": f"Security violation: {error_msg}",
             "execution_time": 0.0,
-            "memory_used_mb": None
+            "memory_used_mb": None,
+            "plots": None
         }
     
     # Create temporary file for code execution
@@ -120,14 +122,43 @@ import psutil
 import os
 import gc
 from datetime import datetime
+import base64
+import io
 
 # Monitor memory usage
 process = psutil.Process(os.getpid())
 initial_memory = process.memory_info().rss / 1024 / 1024
 
+# Plot handling
+plot_data = []
+
 try:
     # User code starts here
 {indented_code}
+    
+    # Check for matplotlib plots
+    try:
+        import matplotlib.pyplot as plt
+        if plt.get_fignums():  # Check if any figures exist
+            for fig_num in plt.get_fignums():
+                fig = plt.figure(fig_num)
+                # Save plot to base64
+                buffer = io.BytesIO()
+                fig.savefig(buffer, format='png', bbox_inches='tight', dpi=150)
+                buffer.seek(0)
+                plot_base64 = base64.b64encode(buffer.getvalue()).decode()
+                plot_data.append(plot_base64)
+                buffer.close()
+            plt.close('all')  # Close all figures to free memory
+            
+            if plot_data:
+                print(f"\\n__PLOTS__: {{len(plot_data)}} plot(s) generated")
+                for i, plot in enumerate(plot_data):
+                    print(f"__PLOT_{{i}}__: {{plot}}")
+    except ImportError:
+        pass  # matplotlib not used
+    except Exception as plot_error:
+        print(f"__PLOT_ERROR__: {{str(plot_error)}}")
     
     # Memory usage after execution
     final_memory = process.memory_info().rss / 1024 / 1024
@@ -158,10 +189,11 @@ except Exception as e:
             stdout, stderr = process.communicate(timeout=timeout)
             execution_time = (datetime.now() - start_time).total_seconds()
             
-            # Parse output for memory usage
+            # Parse output for memory usage and plots
             memory_used = None
             output_lines = []
             error_lines = []
+            plots = []
             
             for line in stdout.split('\n'):
                 if line.startswith('__MEMORY_USED__:'):
@@ -173,6 +205,15 @@ except Exception as e:
                     error_lines.append(line.replace('__ERROR__: ', ''))
                 elif line.startswith('__TRACEBACK__:'):
                     error_lines.extend(stderr.split('\n'))
+                elif line.startswith('__PLOT_') and '__:' in line:
+                    # Extract plot data
+                    try:
+                        plot_data = line.split(':', 1)[1].strip()
+                        plots.append(plot_data)
+                    except:
+                        pass
+                elif line.startswith('__PLOTS__:'):
+                    pass  # Skip plot count line
                 else:
                     output_lines.append(line)
             
@@ -187,7 +228,8 @@ except Exception as e:
                 "output": output,
                 "error": error if error else None,
                 "execution_time": execution_time,
-                "memory_used_mb": memory_used
+                "memory_used_mb": memory_used,
+                "plots": plots if plots else None
             }
             
         except subprocess.TimeoutExpired:
@@ -198,7 +240,8 @@ except Exception as e:
                 "output": "",
                 "error": f"Code execution timed out after {timeout} seconds",
                 "execution_time": timeout,
-                "memory_used_mb": None
+                "memory_used_mb": None,
+                "plots": None
             }
             
     except Exception as e:
@@ -207,7 +250,8 @@ except Exception as e:
             "output": "",
             "error": f"Execution error: {str(e)}",
             "execution_time": (datetime.now() - start_time).total_seconds(),
-            "memory_used_mb": None
+            "memory_used_mb": None,
+            "plots": None
         }
     finally:
         # Clean up temporary file
@@ -258,7 +302,8 @@ async def execute_code(request: CodeExecutionRequest):
             error=result["error"],
             execution_time=result["execution_time"],
             memory_used_mb=result["memory_used_mb"],
-            timestamp=datetime.now().isoformat()
+            timestamp=datetime.now().isoformat(),
+            plots=result["plots"]
         )
         
     except Exception as e:
