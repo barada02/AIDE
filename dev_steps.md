@@ -54,3 +54,4 @@ gcloud functions deploy ${FUNCTION_NAME} `
     --trigger-event google.cloud.storage.object.v1.finalized `
     --set-env-vars GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT},GOOGLE_CLOUD_LOCATION=${GOOGLE_CLOUD_LOCATION},MANAGER_AGENT_URL=${MANAGER_AGENT_URL},PUBSUB_TOPIC=${PUBSUB_TOPIC},TASK_QUEUE_ID=${TASK_QUEUE_ID} 
 ```
+
